@@ -3,7 +3,6 @@
 #include <string>
 
 #include "auth.grpc.pb.h"
-#include "storage/db.hpp"
 
 namespace ozobus::services {
 
@@ -16,7 +15,7 @@ class AuthServiceImpl final : public auth::AuthService::Service {
                            auth::UserDetailsResponse* response) override;
 
  private:
-  ozobus::storage::AuthUserRepository::Repository repository_;
+  std::string database_path_;
 };
 
 }  // namespace ozobus::services
