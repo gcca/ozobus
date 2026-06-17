@@ -13,12 +13,12 @@ function(add_grpc_proto_library TARGET PROTO_DIR)
     add_custom_command(
       OUTPUT ${PB_H} ${PB_CC} ${GRPC_H} ${GRPC_CC}
       COMMAND $<TARGET_FILE:protobuf::protoc>
-              --cpp_out="${CMAKE_CURRENT_BINARY_DIR}"
-              --grpc_out="${CMAKE_CURRENT_BINARY_DIR}"
-              "--plugin=protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>"
-              -I "${PROTO_DIR}"
-              "${PROTO_FILE}"
-      DEPENDS "${PROTO_FILE}"
+              --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
+              --grpc_out=${CMAKE_CURRENT_BINARY_DIR}
+              --plugin=protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>
+              -I ${PROTO_DIR}
+              ${PROTO_FILE}
+      DEPENDS ${PROTO_FILE}
       COMMENT "Generating gRPC/Protobuf C++ for ${NAME}.proto"
       VERBATIM
     )
