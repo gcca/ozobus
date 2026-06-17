@@ -3,6 +3,8 @@
 
 #include <CLI11.hpp>
 
+#include "ozobus/services/auth.hpp"
+
 #include <cstdint>
 #include <iostream>
 #include <memory>
@@ -34,8 +36,11 @@ int main(int argc, char* argv[]) {
 
   grpc::EnableDefaultHealthCheckService(true);
 
+  ozobus::services::AuthServiceImpl auth_service;
+
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  builder.RegisterService(&auth_service);
 
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
   if (server == nullptr) {
