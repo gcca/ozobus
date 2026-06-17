@@ -1,30 +1,36 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
-#include <cstdlib>
+#include <CLI11.hpp>
+
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
 
 namespace {
 
-std::string ServerAddress(int argc, char** argv) {
-  if (argc > 1) {
-    return argv[1];
-  }
+std::string ServerAddress(std::uint16_t port) {
+  return "0.0.0.0:" + std::to_string(port);
+}
 
-  const char* port = std::getenv("PORT");
-  if (port != nullptr && port[0] != '\0') {
-    return std::string("0.0.0.0:") + port;
-  }
-
-  return "0.0.0.0:50051";
+static void SetCLIArgs(CLI::App& app, std::uint16_t& port) {
+  port = 50051;
+  app.add_option("-p,--port", port, "Port to listen on")
+     ->check(CLI::Range(1, 65535))
+     ->capture_default_str();
 }
 
 }  // namespace
 
-int main(int argc, char** argv) {
-  const std::string server_address = ServerAddress(argc, argv);
+int main(int argc, char* argv[]) {
+  CLI::App app{"ozobus"};
+  std::uint16_t port;
+  SetCLIArgs(app, port);
+
+  CLI11_PARSE(app, argc, argv);
+
+  const std::string server_address = ServerAddress(port);
 
   grpc::EnableDefaultHealthCheckService(true);
 

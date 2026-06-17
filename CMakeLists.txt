@@ -8,4 +8,6 @@ add_executable(ozobus
   src/ozobus.cc
 )
 
+target_include_directories(ozobus PRIVATE 3rdparty)
+
 target_link_libraries(ozobus PRIVATE gRPC::grpc++)
