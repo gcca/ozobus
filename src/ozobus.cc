@@ -1,14 +1,13 @@
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
-
-#include <CLI11.hpp>
-
-#include "ozobus/services/auth.hpp"
-
 #include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
+
+#include <CLI11.hpp>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
+
+#include "ozobus/services/auth.hpp"
 
 namespace {
 
@@ -19,8 +18,8 @@ std::string ServerAddress(std::uint16_t port) {
 static void SetCLIArgs(CLI::App& app, std::uint16_t& port) {
   port = 50051;
   app.add_option("-p,--port", port, "Port to listen on")
-     ->check(CLI::Range(1, 65535))
-     ->capture_default_str();
+      ->check(CLI::Range(1, 65535))
+      ->capture_default_str();
 }
 
 }  // namespace
