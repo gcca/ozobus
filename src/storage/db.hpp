@@ -1,26 +1,44 @@
 #pragma once
 
-#include <cstdint>
+#include <mutex>
 #include <string>
+
+#include <sqlite3.h>
 
 namespace ozobus::storage::AuthUserRepository {
 
-struct UserDetails {
-  std::string user_id;
-  std::string username;
-  std::int64_t created_at = 0;
-  bool is_active = false;
+class Repository {
+ public:
+  explicit Repository(std::string database_path);
+  ~Repository();
+
+  Repository(const Repository&) = delete;
+  Repository& operator=(const Repository&) = delete;
+
+  class UserDetailsStatement {
+   public:
+    UserDetailsStatement(UserDetailsStatement&& other) noexcept;
+    UserDetailsStatement& operator=(UserDetailsStatement&& other) noexcept;
+    ~UserDetailsStatement();
+
+    sqlite3_stmt* get() const { return stmt_; }
+    operator sqlite3_stmt*() const { return stmt_; }
+
+   private:
+    friend class Repository;
+
+    UserDetailsStatement(std::unique_lock<std::mutex> lock, sqlite3_stmt* stmt);
+
+    std::unique_lock<std::mutex> lock_;
+    sqlite3_stmt* stmt_ = nullptr;
+  };
+
+  UserDetailsStatement UserDetailsByUsername(const std::string& username);
+
+ private:
+  sqlite3* db_ = nullptr;
+  sqlite3_stmt* user_details_by_username_stmt_ = nullptr;
+  std::mutex mutex_;
 };
-
-enum class LookupStatus { kOk, kNotFound, kError };
-
-struct LookupResult {
-  LookupStatus status = LookupStatus::kError;
-  std::string message;
-  UserDetails user;
-};
-
-LookupResult UserDetailsByUsername(const std::string& database_path,
-                                   const std::string& username);
 
 }  // namespace ozobus::storage::AuthUserRepository

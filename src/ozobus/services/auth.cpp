@@ -1,34 +1,31 @@
 #include "ozobus/services/auth.hpp"
 
-#include "storage/db.hpp"
-
 namespace ozobus::services {
 
 AuthServiceImpl::AuthServiceImpl(std::string database_path)
-    : database_path_(std::move(database_path)) {}
+    : repository_(std::move(database_path)) {}
 
 grpc::Status AuthServiceImpl::UserDetails(
     grpc::ServerContext* /*context*/,
     const auth::UserDetailsRequest* request,
     auth::UserDetailsResponse* response) {
-  const auto result =
-      ozobus::storage::AuthUserRepository::UserDetailsByUsername(
-          database_path_, request->username());
+  auto stmt = repository_.UserDetailsByUsername(request->username());
 
-  switch (result.status) {
-    case ozobus::storage::AuthUserRepository::LookupStatus::kOk:
-      response->set_user_id(result.user.user_id);
-      response->set_username(result.user.username);
-      response->set_is_active(result.user.is_active);
-      response->set_created_at(result.user.created_at);
-      return grpc::Status::OK;
-    case ozobus::storage::AuthUserRepository::LookupStatus::kNotFound:
-      return {grpc::StatusCode::NOT_FOUND, result.message};
-    case ozobus::storage::AuthUserRepository::LookupStatus::kError:
-      return {grpc::StatusCode::INTERNAL, result.message};
+  const int step = sqlite3_step(stmt.get());
+  if (step == SQLITE_DONE) {
+    return {grpc::StatusCode::NOT_FOUND, "user not found"};
+  }
+  if (step != SQLITE_ROW) {
+    return {grpc::StatusCode::INTERNAL, sqlite3_errmsg(sqlite3_db_handle(stmt.get()))};
   }
 
-  return {grpc::StatusCode::INTERNAL, "unexpected lookup status"};
+  response->set_user_id(std::to_string(sqlite3_column_int64(stmt.get(), 0)));
+  response->set_username(
+      reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 1)));
+  response->set_is_active(sqlite3_column_int(stmt.get(), 2) != 0);
+  response->set_created_at(sqlite3_column_int64(stmt.get(), 3));
+
+  return grpc::Status::OK;
 }
 
 }  // namespace ozobus::services

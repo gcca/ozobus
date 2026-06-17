@@ -1,66 +1,87 @@
 #include "storage/db.hpp"
 
-#include <string>
-
-#include <sqlite3.h>
+#include <stdexcept>
+#include <utility>
 
 namespace ozobus::storage::AuthUserRepository {
 
 namespace {
 
-LookupResult MakeError(std::string message) {
-  return {LookupStatus::kError, std::move(message), {}};
+void ThrowOnOpenError(sqlite3* db, const std::string& database_path) {
+  const std::string message =
+      db != nullptr ? sqlite3_errmsg(db) : "failed to open database";
+  if (db != nullptr) {
+    sqlite3_close(db);
+  }
+  throw std::runtime_error("failed to open database " + database_path + ": " +
+                           message);
+}
+
+void ThrowOnPrepareError(sqlite3* db, const char* sql) {
+  throw std::runtime_error(std::string("failed to prepare query: ") + sql +
+                           ": " + sqlite3_errmsg(db));
 }
 
 }  // namespace
 
-LookupResult UserDetailsByUsername(const std::string& database_path,
-                                   const std::string& username) {
-  sqlite3* db = nullptr;
-  if (sqlite3_open(database_path.c_str(), &db) != SQLITE_OK) {
-    const std::string message =
-        db != nullptr ? sqlite3_errmsg(db) : "failed to open database";
-    if (db != nullptr) {
-      sqlite3_close(db);
-    }
-    return MakeError(message);
+Repository::UserDetailsStatement::UserDetailsStatement(
+    std::unique_lock<std::mutex> lock, sqlite3_stmt* stmt)
+    : lock_(std::move(lock)), stmt_(stmt) {}
+
+Repository::UserDetailsStatement::UserDetailsStatement(
+    UserDetailsStatement&& other) noexcept
+    : lock_(std::move(other.lock_)), stmt_(other.stmt_) {
+  other.stmt_ = nullptr;
+}
+
+Repository::UserDetailsStatement& Repository::UserDetailsStatement::operator=(
+    UserDetailsStatement&& other) noexcept {
+  if (this != &other) {
+    lock_ = std::move(other.lock_);
+    stmt_ = other.stmt_;
+    other.stmt_ = nullptr;
+  }
+  return *this;
+}
+
+Repository::UserDetailsStatement::~UserDetailsStatement() = default;
+
+Repository::Repository(std::string database_path) {
+  if (sqlite3_open_v2(database_path.c_str(), &db_,
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX,
+                      nullptr) != SQLITE_OK) {
+    ThrowOnOpenError(db_, database_path);
   }
 
   const char* sql =
       "SELECT id, username, is_active, strftime('%s', created_at) "
       "FROM auth_user WHERE username = ? LIMIT 1";
 
-  sqlite3_stmt* stmt = nullptr;
-  if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-    const std::string message = sqlite3_errmsg(db);
-    sqlite3_close(db);
-    return MakeError(message);
+  if (sqlite3_prepare_v2(db_, sql, -1, &user_details_by_username_stmt_,
+                         nullptr) != SQLITE_OK) {
+    ThrowOnPrepareError(db_, sql);
   }
+}
 
-  sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
-
-  const int step = sqlite3_step(stmt);
-  if (step == SQLITE_DONE) {
-    sqlite3_finalize(stmt);
-    sqlite3_close(db);
-    return {LookupStatus::kNotFound, "user not found", {}};
+Repository::~Repository() {
+  if (user_details_by_username_stmt_ != nullptr) {
+    sqlite3_finalize(user_details_by_username_stmt_);
   }
-  if (step != SQLITE_ROW) {
-    const std::string message = sqlite3_errmsg(db);
-    sqlite3_finalize(stmt);
-    sqlite3_close(db);
-    return MakeError(message);
+  if (db_ != nullptr) {
+    sqlite3_close(db_);
   }
+}
 
-  UserDetails user;
-  user.user_id = std::to_string(sqlite3_column_int64(stmt, 0));
-  user.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-  user.is_active = sqlite3_column_int(stmt, 2) != 0;
-  user.created_at = sqlite3_column_int64(stmt, 3);
+Repository::UserDetailsStatement Repository::UserDetailsByUsername(
+    const std::string& username) {
+  std::unique_lock<std::mutex> lock(mutex_);
 
-  sqlite3_finalize(stmt);
-  sqlite3_close(db);
-  return {LookupStatus::kOk, {}, std::move(user)};
+  sqlite3_reset(user_details_by_username_stmt_);
+  sqlite3_clear_bindings(user_details_by_username_stmt_);
+  sqlite3_bind_text(user_details_by_username_stmt_, 1, username.c_str(), -1,
+                    SQLITE_TRANSIENT);
+
+  return UserDetailsStatement(std::move(lock), user_details_by_username_stmt_);
 }
 
 }  // namespace ozobus::storage::AuthUserRepository
