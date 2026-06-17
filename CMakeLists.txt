@@ -12,6 +12,7 @@ add_grpc_proto_library(ozobus_proto "${CMAKE_CURRENT_SOURCE_DIR}/protos")
 add_executable(ozobus
   src/ozobus.cc
   src/ozobus/services/auth.cpp
+  src/storage/db.cpp
 )
 
 target_include_directories(ozobus SYSTEM PRIVATE 3rdparty ${CMAKE_CURRENT_BINARY_DIR})
