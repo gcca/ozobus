@@ -10,7 +10,8 @@ namespace ozobus::storage::AuthUserRepository {
 
 template <typename Fn>
 auto UserDetailsByUsername(const std::string& database_path,
-                           const std::string& username, Fn&& callback) {
+                           const std::string& username,
+                           Fn&& callback) {
   sqlite3* db = nullptr;
   if (sqlite3_open_v2(database_path.c_str(), &db, SQLITE_OPEN_READONLY,
                       nullptr) != SQLITE_OK) {
