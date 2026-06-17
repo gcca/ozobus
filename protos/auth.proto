@@ -14,8 +14,6 @@ message UserDetailsRequest {
 message UserDetailsResponse {
   string user_id = 1;
   string username = 2;
-  string email = 3;
-  repeated string roles = 4;
-  int64 created_at = 5; // Unix timestamp (seconds)
-  bool is_active = 6;
+  int64 created_at = 3; // Unix timestamp (seconds)
+  bool is_active = 4;
 }

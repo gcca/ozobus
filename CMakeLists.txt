@@ -4,6 +4,7 @@ project(ozobus LANGUAGES CXX)
 
 find_package(gRPC CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 include(cmake/ProtoGen.cmake)
 add_grpc_proto_library(ozobus_proto "${CMAKE_CURRENT_SOURCE_DIR}/protos")
@@ -15,4 +16,5 @@ add_executable(ozobus
 
 target_include_directories(ozobus SYSTEM PRIVATE 3rdparty ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(ozobus PRIVATE src)
-target_link_libraries(ozobus PRIVATE gRPC::grpc++ ozobus_proto)
+
+target_link_libraries(ozobus PRIVATE gRPC::grpc++ ozobus_proto SQLite3::SQLite3)

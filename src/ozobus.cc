@@ -15,10 +15,14 @@ std::string ServerAddress(std::uint16_t port) {
   return "0.0.0.0:" + std::to_string(port);
 }
 
-static void SetCLIArgs(CLI::App& app, std::uint16_t& port) {
+static void SetCLIArgs(CLI::App& app, std::uint16_t& port,
+                      std::string& database_path) {
   port = 50051;
+  database_path = "ozobus.db";
   app.add_option("-p,--port", port, "Port to listen on")
       ->check(CLI::Range(1, 65535))
+      ->capture_default_str();
+  app.add_option("-d,--database", database_path, "SQLite database path")
       ->capture_default_str();
 }
 
@@ -27,7 +31,8 @@ static void SetCLIArgs(CLI::App& app, std::uint16_t& port) {
 int main(int argc, char* argv[]) {
   CLI::App app{"ozobus"};
   std::uint16_t port;
-  SetCLIArgs(app, port);
+  std::string database_path;
+  SetCLIArgs(app, port, database_path);
 
   CLI11_PARSE(app, argc, argv);
 
@@ -35,7 +40,7 @@ int main(int argc, char* argv[]) {
 
   grpc::EnableDefaultHealthCheckService(true);
 
-  ozobus::services::AuthServiceImpl auth_service;
+  ozobus::services::AuthServiceImpl auth_service{database_path};
 
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
