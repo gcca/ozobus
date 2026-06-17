@@ -11,8 +11,9 @@ grpc::Status AuthServiceImpl::UserDetails(
     grpc::ServerContext* /*context*/,
     const auth::UserDetailsRequest* request,
     auth::UserDetailsResponse* response) {
-  const auto result = ozobus::storage::AuthUserRepository::UserDetailsByUsername(
-      database_path_, request->username());
+  const auto result =
+      ozobus::storage::AuthUserRepository::UserDetailsByUsername(
+          database_path_, request->username());
 
   switch (result.status) {
     case ozobus::storage::AuthUserRepository::LookupStatus::kOk:

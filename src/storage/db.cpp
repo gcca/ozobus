@@ -1,8 +1,8 @@
 #include "storage/db.hpp"
 
-#include <sqlite3.h>
-
 #include <string>
+
+#include <sqlite3.h>
 
 namespace ozobus::storage::AuthUserRepository {
 
@@ -54,8 +54,7 @@ LookupResult UserDetailsByUsername(const std::string& database_path,
 
   UserDetails user;
   user.user_id = std::to_string(sqlite3_column_int64(stmt, 0));
-  user.username =
-      reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+  user.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
   user.is_active = sqlite3_column_int(stmt, 2) != 0;
   user.created_at = sqlite3_column_int64(stmt, 3);
 
