@@ -15,8 +15,9 @@ std::string ServerAddress(std::uint16_t port) {
   return "0.0.0.0:" + std::to_string(port);
 }
 
-static void SetCLIArgs(CLI::App& app, std::uint16_t& port,
-                      std::string& database_path) {
+static void SetCLIArgs(CLI::App& app,
+                       std::uint16_t& port,
+                       std::string& database_path) {
   port = 50051;
   database_path = "ozobus.db";
   app.add_option("-p,--port", port, "Port to listen on")

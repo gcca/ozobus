@@ -1,8 +1,8 @@
 #include "ozobus/services/auth.hpp"
 
-#include <sqlite3.h>
-
 #include <string>
+
+#include <sqlite3.h>
 
 namespace ozobus::services {
 
