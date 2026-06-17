@@ -1,7 +1,5 @@
 #pragma once
 
-#include <grpcpp/grpcpp.h>
-
 #include "auth.grpc.pb.h"
 
 namespace ozobus::services {

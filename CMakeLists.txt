@@ -13,5 +13,5 @@ add_executable(ozobus
   src/ozobus/services/auth.cpp
 )
 
-target_include_directories(ozobus PRIVATE 3rdparty src)
+target_include_directories(ozobus PRIVATE 3rdparty src ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(ozobus PRIVATE gRPC::grpc++ ozobus_proto)

@@ -1,11 +1,11 @@
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <string>
 
 #include <CLI11.hpp>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
 
 #include "ozobus/services/auth.hpp"
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
   if (server == nullptr) {
     std::cerr << "Failed to start ozobus on " << server_address << '\n';
-    return 1;
+    return EXIT_FAILURE;
   }
 
   grpc::HealthCheckServiceInterface* health_service =
@@ -56,5 +56,5 @@ int main(int argc, char* argv[]) {
   std::cout << "ozobus listening on " << server_address << '\n';
   server->Wait();
 
-  return 0;
+  return EXIT_SUCCESS;
 }
